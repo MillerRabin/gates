@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\DTOs\CreateAddressDTO;
+use App\DTOs\ValidateAddressDTO;
 use App\Http\Requests\CreateAddressRequest;
+use App\Http\Requests\ValidateAddressRequest;
 use App\Services\AddressService;
 
 class AddressController extends Controller
@@ -17,5 +19,16 @@ class AddressController extends Controller
     );
 
     return response()->json($address, 201);
+  }
+
+  public function validateAddress(
+    ValidateAddressRequest $request,
+    AddressService $service
+  ) {
+    $result = $service->validateAddress(
+      ValidateAddressDTO::fromRequest($request)
+    );
+
+    return response()->json($result);
   }
 }

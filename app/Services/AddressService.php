@@ -3,30 +3,27 @@
 namespace App\Services;
 
 use App\DTOs\CreateAddressDTO;
+use App\DTOs\ValidateAddressDTO;
 use App\Models\Address;
 use App\Models\Gate;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 
 class AddressService
 {
+  public function __construct(
+    private WalletClient $walletClient
+  ) {}
+
   public function createAddress(CreateAddressDTO $dto): Address
   {
     $gate = Gate::where('name', $dto->gate)->firstOrFail();
 
-    $response = Http::post(
-      config('services.wallet.url') . '/api/v1/createaddress',
-      [
-        'gate' => $gate->name,
-        'account' => $dto->account,
-        'change' => $dto->change,
-        'address_index' => $dto->address_index,
-      ]
-    );
-
-    $response->throw();
-
-    $walletData = $response->json();
+    $walletData = $this->walletClient->createAddress([
+      'gate' => $gate->name,
+      'account' => $dto->account,
+      'change' => $dto->change,
+      'address_index' => $dto->address_index,
+    ]);
 
     if (! isset($walletData['address'])) {
       throw new \RuntimeException(
@@ -47,5 +44,14 @@ class AddressService
         'address' => $walletData['address'],
       ]);
     });
+  }
+
+  public function validateAddress(
+    ValidateAddressDTO $dto
+  ): array {
+    return $this->walletClient->validateAddress([
+      'gate' => $dto->gate,
+      'address' => $dto->address,
+    ]);
   }
 }
