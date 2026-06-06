@@ -16,7 +16,7 @@ class GateSeeder extends Seeder
             [
                 'id' => 1,
                 'name' => 'eth_sepolia',
-                'rpc_url' => null,
+                'rpc_url' => 'https://ethereum-sepolia-rpc.publicnode.com',
                 'chain_id' => 11155111,
                 'confirmations_required' => 12,
                 'parent_gate_id' => null,
@@ -28,7 +28,7 @@ class GateSeeder extends Seeder
             [
                 'id' => 2,
                 'name' => 'usdc_sepolia',
-                'rpc_url' => null,
+                'rpc_url' => 'https://ethereum-sepolia-rpc.publicnode.com',
                 'chain_id' => 11155111,
                 'confirmations_required' => 12,
                 'parent_gate_id' => 1,

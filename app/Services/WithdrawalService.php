@@ -5,9 +5,11 @@ namespace App\Services;
 use App\DTOs\CreateWithdrawalDTO;
 use App\Enums\WithdrawalStatus;
 use App\Models\Gate;
+use App\Models\HotWallet;
 use App\Models\Withdrawal;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use RuntimeException;
 
 class WithdrawalService
 {
@@ -23,26 +25,39 @@ class WithdrawalService
 
     return DB::transaction(function () use ($dto) {
 
-      $validation = $this->walletClient->validateAddress([
-        'gate' => 'ethereum',
-        'address' => $dto->toAddress,
-      ]);
+      $gate = Gate::query()
+        ->where('name', $dto->assetGate)
+        ->firstOrFail();
 
-      if (!($validation['valid'] ?? false)) {
+      $baseGate = $gate->parent_gate_id
+        ? $gate->parentGate
+        : $gate;
+
+      $validation =
+        $this->walletClient->validateAddress([
+          'gate' => 'ethereum',
+          'address' => $dto->toAddress,
+        ]);
+
+      if (! ($validation['valid'] ?? false)) {
         throw new InvalidArgumentException(
           'Invalid destination address'
         );
       }
 
-      $gate = Gate::query()
-        ->where('name', $dto->assetGate)
-        ->firstOrFail();
+      $hotWallet = HotWallet::query()
+        ->where('gate_id', $baseGate->id)
+        ->first();
 
-      $rpcUrl = $gate->parent_gate_id
-        ? $gate->parentGate->rpc_url
-        : $gate->rpc_url;
+      if (!$hotWallet) {
+        throw new RuntimeException(
+          "Hot wallet is not configured for gate {$baseGate->name}"
+        );
+      }
 
-      $decimals = 18;
+      $decimals = $gate->asset_type === 'ERC20'
+        ? 6 // USDC Sepolia
+        : 18;
 
       $amountBaseUnits =
         $this->amountConverter->toBaseUnits(
@@ -58,35 +73,24 @@ class WithdrawalService
         'status' => WithdrawalStatus::CREATED,
       ]);
 
-      $sender = $this->walletClient->createAddress([
-        'gate' => 'ethereum',
-        'account' => 0,
-        'change' => 0,
-        'address_index' => 0,
-      ]);
-
-      $senderAddress = $sender['address'];
-
       $nonce = $this->rpcClient->getTransactionCount(
-        $rpcUrl,
-        $senderAddress
+        $baseGate->rpc_url,
+        $hotWallet->address
+      );
+
+      $txParams = $this->buildTransactionParams(
+        gate: $gate,
+        toAddress: $dto->toAddress,
+        amountBaseUnits: $amountBaseUnits,
+        nonce: $nonce
       );
 
       $signed = $this->walletClient->createTransaction([
         'gate' => 'ethereum',
-        'account' => 0,
-        'change' => 0,
-        'address_index' => 0,
-        'tx_params' => [
-          'to' => $dto->toAddress,
-          'value_wei' => $amountBaseUnits,
-          'data' => '0x',
-          'nonce' => $nonce,
-          'chain_id' => $gate->chain_id,
-          'gas_limit' => 21000,
-          'max_fee_per_gas_wei' => '30000000000',
-          'max_priority_fee_per_gas_wei' => '1500000000',
-        ],
+        'account' => $hotWallet->account,
+        'change' => $hotWallet->change,
+        'address_index' => $hotWallet->address_index,
+        'tx_params' => $txParams,
       ]);
 
       $withdrawal->update([
@@ -96,7 +100,7 @@ class WithdrawalService
 
       $broadcastTxHash =
         $this->rpcClient->sendRawTransaction(
-          $rpcUrl,
+          $baseGate->rpc_url,
           $signed['signed_tx']
         );
 
@@ -109,10 +113,93 @@ class WithdrawalService
         'id' => $withdrawal->id,
         'asset_gate' => $gate->name,
         'amount' => $withdrawal->amount,
-        'amount_base_units' => $withdrawal->amount_base_units,
-        'status' => $withdrawal->status->value,
-        'tx_hash' => $withdrawal->tx_hash,
+        'amount_base_units'
+        => $withdrawal->amount_base_units,
+        'status'
+        => $withdrawal->status->value,
+        'tx_hash'
+        => $withdrawal->tx_hash,
       ];
     });
+  }
+
+  private function buildTransactionParams(
+    Gate $gate,
+    string $toAddress,
+    string $amountBaseUnits,
+    int $nonce
+  ): array {
+
+    if ($gate->asset_type === 'ERC20') {
+
+      return [
+        'to' => $gate->token_contract,
+        'value_wei' => '0',
+        'data' => $this->buildErc20TransferData(
+          $toAddress,
+          $amountBaseUnits
+        ),
+        'nonce' => $nonce,
+        'chain_id' => $gate->chain_id,
+        'gas_limit' => 90000,
+        'max_fee_per_gas_wei'
+        => '30000000000',
+        'max_priority_fee_per_gas_wei'
+        => '1500000000',
+      ];
+    }
+
+    return [
+      'to' => $toAddress,
+      'value_wei' => $amountBaseUnits,
+      'data' => '0x',
+      'nonce' => $nonce,
+      'chain_id' => $gate->chain_id,
+      'gas_limit' => 21000,
+      'max_fee_per_gas_wei'
+      => '30000000000',
+      'max_priority_fee_per_gas_wei'
+      => '1500000000',
+    ];
+  }
+
+  private function buildErc20TransferData(
+    string $recipient,
+    string $amount
+  ): string {
+
+    $methodId = 'a9059cbb';
+
+    $recipient =
+      strtolower(
+        ltrim($recipient, '0x')
+      );
+
+    $recipient =
+      str_pad(
+        $recipient,
+        64,
+        '0',
+        STR_PAD_LEFT
+      );
+
+    $amountHex =
+      gmp_strval(
+        gmp_init($amount, 10),
+        16
+      );
+
+    $amountHex =
+      str_pad(
+        $amountHex,
+        64,
+        '0',
+        STR_PAD_LEFT
+      );
+
+    return '0x'
+      . $methodId
+      . $recipient
+      . $amountHex;
   }
 }

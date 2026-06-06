@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Gate extends Model
 {
+  public function hotWallet()
+  {
+    return $this->hasOne(HotWallet::class);
+  }
+  
   protected $fillable = [
     'name',
     'rpc_url',
