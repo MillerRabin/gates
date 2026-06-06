@@ -4,7 +4,7 @@ install:
 	composer install
 	php artisan migrate
   php artisan db:seed
-  php artisan hotwallet:sync --gate=eth_sepolia
+  php artisan hotwallet:sync
 test:
 	php artisan test
 

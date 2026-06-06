@@ -1,12 +1,14 @@
 # Gates
-
-Create .env file from env.example and fill database credentials
+## Prepare to install
+  1. Create .env file from env.example and fill database credentials
+  2. Use make install to prepare database and generate hotwallets
 
 ## launch locally
-  php artisan serve
+  make server
 
-## launch as docker container
-
+## launch in docker container
+  make build -  to build docker image
+  make run - to run image
 
 ## Reorganization strategy
 
