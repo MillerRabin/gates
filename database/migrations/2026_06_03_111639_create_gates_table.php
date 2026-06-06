@@ -13,8 +13,7 @@ return new class extends Migration {
     Schema::create('gates', function (Blueprint $table) {
       $table->id();
       $table->string('name');
-      $table->string('rpc_url')
-        ->nullable();
+      $table->string('rpc_url');
       $table->unsignedBigInteger('chain_id');
       $table->unsignedInteger('confirmations_required');
 
@@ -31,7 +30,7 @@ return new class extends Migration {
       $table->timestamps();
       $table->index('chain_id');
       $table->index('asset_type');
-    });    
+    });
   }
 
   /**

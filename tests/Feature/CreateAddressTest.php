@@ -15,7 +15,7 @@ class CreateAddressTest extends TestCase
   {
     $gate = Gate::create([
       'name' => 'ethereum',
-      'rpc_url' => null,
+      'rpc_url' => 'https://ethereum-sepolia-rpc.publicnode.com',
       'chain_id' => 11155111,
       'confirmations_required' => 12,
       'asset_type' => 'NATIVE',
@@ -46,7 +46,7 @@ class CreateAddressTest extends TestCase
       'created_at',
       'updated_at',
     ]);
-    
+
     $this->assertDatabaseHas('addresses', [
       'gate_id' => $gate->id,
       'account' => 0,

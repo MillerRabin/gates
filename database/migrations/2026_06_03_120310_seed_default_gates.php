@@ -12,7 +12,7 @@ return new class extends Migration {
       [
         'id' => 1,
         'name' => 'eth_sepolia',
-        'rpc_url' => null,
+        'rpc_url' => 'https://ethereum-sepolia-rpc.publicnode.com',
         'chain_id' => 11155111,
         'confirmations_required' => 12,
         'parent_gate_id' => null,
@@ -24,12 +24,12 @@ return new class extends Migration {
       [
         'id' => 2,
         'name' => 'usdc_sepolia',
-        'rpc_url' => null,
+        'rpc_url' => 'https://ethereum-sepolia-rpc.publicnode.com',
         'chain_id' => 11155111,
         'confirmations_required' => 12,
         'parent_gate_id' => 1,
         'asset_type' => 'ERC20',
-        'token_contract' => null,
+        'token_contract' => '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
         'created_at' => now(),
         'updated_at' => now(),
       ],

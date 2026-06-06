@@ -21,6 +21,7 @@ return new class extends Migration {
       $table->string('parent_hash', 66);
       $table->timestamps();
       $table->unique(['gate_id', 'block_number']);
+      $table->index('block_hash');
     });
   }
 

@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'gates' => [
-        'url' => env('APP_URL'),
+    'wallet' => [
+        'url' => env('WALLET_URL'),
     ],
 
 ];
