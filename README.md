@@ -1,4 +1,7 @@
 # Gates
+
+Сервис gates - это 
+
 ## Prepare to install
   1. Create .env file from env.example and fill database credentials
   2. Use make install to prepare database and generate hotwallets

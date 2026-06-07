@@ -20,15 +20,4 @@ class AddressController extends Controller
 
     return response()->json($address, 201);
   }
-
-  public function validateAddress(
-    ValidateAddressRequest $request,
-    AddressService $service
-  ) {
-    $result = $service->validateAddress(
-      ValidateAddressDTO::fromRequest($request)
-    );
-
-    return response()->json($result);
-  }
 }
