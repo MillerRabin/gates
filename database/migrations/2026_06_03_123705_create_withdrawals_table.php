@@ -28,6 +28,9 @@ return new class extends Migration {
       $table->string('tx_hash', 66)
         ->nullable();
 
+      $table->text('error_message')
+        ->nullable();
+
       $table->enum('status', [
         'CREATED',
         'SIGNED',

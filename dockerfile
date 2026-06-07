@@ -1,4 +1,4 @@
-FROM php:8.4-cli-trixie-slim
+FROM php:8.4-cli
 
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \

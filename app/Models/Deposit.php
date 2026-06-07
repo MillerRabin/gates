@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Deposit extends Model
 {
@@ -15,4 +16,18 @@ class Deposit extends Model
     'block_hash',
     'amount',
   ];
+
+  public function gate(): BelongsTo
+  {
+    return $this->belongsTo(
+      Gate::class
+    );
+  }
+
+  public function address(): BelongsTo
+  {
+    return $this->belongsTo(
+      Address::class
+    );
+  }
 }
